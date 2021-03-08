@@ -37,6 +37,7 @@ const reviewSchema = new mongoose.Schema(
 reviewSchema.index({ tour: 1, user: 1 }, { unique: true });
 
 reviewSchema.pre(/^find/, function(next) {
+  //This was turned of to not cause populate chaining
   // this.populate({
   //   path: 'tour',
   //   select: 'name'
@@ -45,6 +46,7 @@ reviewSchema.pre(/^find/, function(next) {
   //   select: 'name photo'
   // });
 
+  //Instead only populate with the following information
   this.populate({
     path: 'user',
     select: 'name photo'
@@ -52,16 +54,22 @@ reviewSchema.pre(/^find/, function(next) {
   next();
 });
 
+// Static methods: Can be called directly from the model
+// https://mongoosejs.com/docs/guide.html#statics
 reviewSchema.statics.calcAverageRatings = async function(tourId) {
-  const stats = await this.aggregate([
+  // this points to the current model
+  const reviewModel = this;
+  // Aggregation pipeline https://docs.mongodb.com/manual/reference/operator/aggregation-pipeline/
+  const stats = await reviewModel.aggregate([
     {
+      // We specify in match, the query, in this example we query for the tour matching the tourId
       $match: { tour: tourId }
     },
     {
       $group: {
-        _id: '$tour',
-        nRating: { $sum: 1 },
-        avgRating: { $avg: '$rating' }
+        _id: '$tour', //$tour stands for the field named 'tour' within the current model (reviewModel)
+        nRating: { $sum: 1 }, //nRating is the field within stats variable that will have the sum of all the reviews (documents total)
+        avgRating: { $avg: '$rating' } //avgRating is the field that will output the average of the 'rating' field among all the documents
       }
     }
   ]);
@@ -81,21 +89,24 @@ reviewSchema.statics.calcAverageRatings = async function(tourId) {
 };
 
 reviewSchema.post('save', function() {
-  // this points to current review
+  // this points to current review (document)
+  // With this.constructor, we can point to the model, and get access to the model methods
   this.constructor.calcAverageRatings(this.tour);
 });
 
 // findByIdAndUpdate
 // findByIdAndDelete
 reviewSchema.pre(/^findOneAnd/, async function(next) {
-  this.r = await this.findOne();
+  const currentQuery = this;
+  // Trick to access the document from the query
+  currentQuery.review = await this.findOne();
   // console.log(this.r);
   next();
 });
 
 reviewSchema.post(/^findOneAnd/, async function() {
   // await this.findOne(); does NOT work here, query has already executed
-  await this.r.constructor.calcAverageRatings(this.r.tour);
+  await this.review.constructor.calcAverageRatings(this.review.tour);
 });
 
 const Review = mongoose.model('Review', reviewSchema);

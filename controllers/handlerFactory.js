@@ -76,6 +76,8 @@ exports.getAll = Model =>
       .sort()
       .limitFields()
       .paginate();
+    // Makes this query return detailed execution stats instead of the actual query result 
+    // https://mongoosejs.com/docs/api/query.html#query_Query-explain
     // const doc = await features.query.explain();
     const doc = await features.query;
 

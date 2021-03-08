@@ -10,6 +10,7 @@ const router = express.Router();
 // POST /tour/234fad4/reviews
 // GET /tour/234fad4/reviews
 
+//Use the review router within the tour router by mounting it to the tours router
 router.use('/:tourId/reviews', reviewRouter);
 
 router

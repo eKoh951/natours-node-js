@@ -43,6 +43,7 @@ exports.resizeTourImages = catchAsync(async (req, res, next) => {
   req.body.images = [];
 
   await Promise.all(
+    // When we use async on a callback function, we don't await the result, instead we get a promise, therefore we rather save all these promises in an array and await for all of them
     req.files.images.map(async (file, i) => {
       const filename = `tour-${req.params.id}-${Date.now()}-${i + 1}.jpeg`;
 
@@ -72,6 +73,8 @@ exports.createTour = factory.createOne(Tour);
 exports.updateTour = factory.updateOne(Tour);
 exports.deleteTour = factory.deleteOne(Tour);
 
+// Aggregation pipeline: This is used to create some statistics
+// https://mongoosejs.com/docs/api/aggregate.html#aggregate_Aggregate
 exports.getTourStats = catchAsync(async (req, res, next) => {
   const stats = await Tour.aggregate([
     {
@@ -156,6 +159,7 @@ exports.getToursWithin = catchAsync(async (req, res, next) => {
   const { distance, latlng, unit } = req.params;
   const [lat, lng] = latlng.split(',');
 
+  // Convert units to radians (by dividing by the earth's radius)
   const radius = unit === 'mi' ? distance / 3963.2 : distance / 6378.1;
 
   if (!lat || !lng) {
@@ -168,6 +172,7 @@ exports.getToursWithin = catchAsync(async (req, res, next) => {
   }
 
   const tours = await Tour.find({
+    // $geoWithin: https://docs.mongodb.com/manual/reference/operator/query/geoWithin/
     startLocation: { $geoWithin: { $centerSphere: [[lng, lat], radius] } }
   });
 

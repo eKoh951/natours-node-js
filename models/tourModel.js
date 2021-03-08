@@ -92,6 +92,7 @@ const tourSchema = new mongoose.Schema(
       address: String,
       description: String
     },
+    //Geospatial from MongoDB
     locations: [
       {
         type: {
@@ -99,12 +100,14 @@ const tourSchema = new mongoose.Schema(
           default: 'Point',
           enum: ['Point']
         },
+        //coordinates are lng, lat
         coordinates: [Number],
         address: String,
         description: String,
         day: Number
       }
     ],
+    //When we specify an array we mean documents
     guides: [
       {
         type: mongoose.Schema.ObjectId,
@@ -121,13 +124,15 @@ const tourSchema = new mongoose.Schema(
 // tourSchema.index({ price: 1 });
 tourSchema.index({ price: 1, ratingsAverage: -1 });
 tourSchema.index({ slug: 1 });
+// Telling mongodb to save index startLocation as a 2dsphere (point on earth)
+// https://docs.mongodb.com/manual/core/2dsphere/
 tourSchema.index({ startLocation: '2dsphere' });
 
 tourSchema.virtual('durationWeeks').get(function() {
   return this.duration / 7;
 });
 
-// Virtual populate
+// Virtual populate: https://mongoosejs.com/docs/tutorials/virtuals.html#populate
 tourSchema.virtual('reviews', {
   ref: 'Review',
   foreignField: 'tour',

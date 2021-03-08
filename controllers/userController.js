@@ -5,6 +5,8 @@ const catchAsync = require('./../utils/catchAsync');
 const AppError = require('./../utils/appError');
 const factory = require('./handlerFactory');
 
+// With multer we can process any multi type file (imgs, etc)
+// https://github.com/expressjs/multer#diskstorage
 // const multerStorage = multer.diskStorage({
 //   destination: (req, file, cb) => {
 //     cb(null, 'public/img/users');
@@ -36,6 +38,7 @@ exports.resizeUserPhoto = catchAsync(async (req, res, next) => {
 
   req.file.filename = `user-${req.user.id}-${Date.now()}.jpeg`;
 
+  // With sharp we can process images
   await sharp(req.file.buffer)
     .resize(500, 500)
     .toFormat('jpeg')
